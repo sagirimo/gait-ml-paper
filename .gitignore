@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+
+data/gaitpdb/*.zip
+data/gaitpdb/*.aria2
+data/gaitpdb/download_parts/
+data/gaitpdb/1.0.0/
+
+results/.matplotlib-cache/
+results/.cache/

@@ -1,0 +1,14 @@
+{
+  "n_records": 279,
+  "n_subjects": 165,
+  "n_train_records": 219,
+  "n_test_records": 60,
+  "n_train_subjects": 123,
+  "n_test_subjects": 42,
+  "accuracy": 0.8,
+  "balanced_accuracy": 0.7582417582417582,
+  "macro_f1": 0.7689345314505777,
+  "roc_auc": 0.8717948717948718,
+  "control_f1": 0.6842105263157895,
+  "pd_f1": 0.8536585365853658
+}

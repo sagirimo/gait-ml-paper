@@ -1,0 +1,2 @@
+n_records,n_subjects,n_train_records,n_test_records,n_train_subjects,n_test_subjects,accuracy,balanced_accuracy,macro_f1,roc_auc,control_f1,pd_f1
+279,165,219,60,123,42,0.8,0.7582417582417582,0.7689345314505777,0.8717948717948718,0.6842105263157895,0.8536585365853658
