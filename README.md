@@ -49,3 +49,36 @@ PowerShell 一键复现：
 ```powershell
 .\scripts\bootstrap_windows.ps1
 ```
+
+如果 PhysioNet 下载慢，可以走本机 VPN 代理，例如 Clash/V2Ray 常见端口 `7890`：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\bootstrap_windows.ps1 -Proxy http://127.0.0.1:7890
+```
+
+也可以只下载/解压数据：
+
+```powershell
+.\.venv\Scripts\python.exe src\download_gaitpdb.py --proxy http://127.0.0.1:7890
+```
+
+## Model comparison
+
+Windows 接手后新增了 subject-level repeated CV 模型对比脚本，默认复用已提交的小特征表：
+
+```powershell
+.\.venv\Scripts\python.exe src\run_model_comparison.py
+```
+
+默认实验协议：5 repeats x 5 folds，`StratifiedGroupKFold`，按 `subject_id` 分组，保证每个 fold 里同一受试者不会同时出现在 train/test。
+
+当前结果（`results/model_comparison_summary.csv`）：
+
+| model | accuracy | balanced accuracy | macro-F1 | ROC-AUC |
+| --- | ---: | ---: | ---: | ---: |
+| SVM-RBF | 0.778 +/- 0.074 | 0.773 +/- 0.071 | 0.754 +/- 0.076 | 0.859 +/- 0.066 |
+| Extra Trees | 0.797 +/- 0.071 | 0.745 +/- 0.082 | 0.752 +/- 0.083 | 0.848 +/- 0.067 |
+| Gradient Boosting | 0.774 +/- 0.072 | 0.735 +/- 0.079 | 0.733 +/- 0.082 | 0.809 +/- 0.076 |
+| Random Forest | 0.798 +/- 0.060 | 0.734 +/- 0.075 | 0.745 +/- 0.075 | 0.855 +/- 0.064 |
+| KNN-7 | 0.715 +/- 0.078 | 0.710 +/- 0.073 | 0.688 +/- 0.076 | 0.761 +/- 0.082 |
+| Logistic Regression | 0.714 +/- 0.111 | 0.709 +/- 0.086 | 0.689 +/- 0.103 | 0.785 +/- 0.081 |

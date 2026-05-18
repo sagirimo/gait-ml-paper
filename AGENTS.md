@@ -22,6 +22,17 @@
 - 结果文件：`results/rf_baseline_metrics.csv`、`results/rf_baseline_classification_report.txt`、`results/rf_baseline_confusion_matrix.png`、`results/rf_baseline_feature_importance.csv`、`results/rf_baseline_feature_importance_top25.png`。
 - Windows 交接：新增 `docs/WINDOWS_CODEX_HANDOFF.md`、`scripts/bootstrap_windows.ps1`、`skills/gait-ml-paper/SKILL.md`。Windows Codex 接手时先读这三个文件和 `README.md`。
 
+### 2026-05-17 — Windows Codex
+- 已克隆仓库到 `C:\Users\MOLIEX-DESKTOP\Documents\Project\gait-ml-paper`。
+- 已创建 `.venv` 并安装 `requirements.txt`。
+- PhysioNet 原始 ZIP 一开始直连下载中途断开；已改用本机 VPN 代理 `http://127.0.0.1:7890` 成功下载并解压，检测到 306 个 gait record files，原始数据仍不进 git。
+- 已增强 `src/download_gaitpdb.py`：curl 下载会自动 retry 并从 partial file 续传；新增 `--proxy`，aria2/curl 都可走代理。
+- 已增强 `scripts/bootstrap_windows.ps1`：检查 native command exit code，下载失败会停止 bootstrap；新增 `-Proxy` 参数。
+- 已用已提交的 `data/processed/gaitpdb_features.csv` 复跑 RF baseline：accuracy 0.800，balanced accuracy 0.758，macro-F1 0.769，ROC-AUC 0.872。
+- 已从原始 `.txt` 数据重新提取特征并复跑 RF baseline，结果与 handoff 一致：accuracy 0.800，balanced accuracy 0.758，macro-F1 0.769，ROC-AUC 0.872。
+- 新增 `src/run_model_comparison.py`：5x5 `StratifiedGroupKFold`，按 `subject_id` 分组，比较 Logistic Regression、SVM-RBF、KNN-7、Random Forest、Extra Trees、Gradient Boosting。
+- 当前模型对比最佳 balanced accuracy：SVM-RBF，0.773 +/- 0.071。输出：`results/model_comparison_cv_results.csv`、`results/model_comparison_summary.csv`、`results/model_comparison_summary.json`、`results/model_comparison_balanced_accuracy.png`。
+
 ## 文件结构
 - `马康_步态ML论文_执行手册.md` — 四阶段完整计划 + 实验设计
 - `马康_找方向指南_2026-05-10.md` — 选题背景 + 期刊选择

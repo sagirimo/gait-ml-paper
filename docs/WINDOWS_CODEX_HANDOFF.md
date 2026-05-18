@@ -38,6 +38,13 @@ py -3 -m venv .venv
 
 If downloads are slow, install `aria2` and rerun `src\download_gaitpdb.py`. The script automatically uses `aria2c` when available.
 
+On this Windows machine, VPN proxy `http://127.0.0.1:7890` worked:
+
+```powershell
+.\.venv\Scripts\python.exe src\download_gaitpdb.py --proxy http://127.0.0.1:7890
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\bootstrap_windows.ps1 -Proxy http://127.0.0.1:7890
+```
+
 ## Data Rules
 
 Do not commit:
@@ -56,11 +63,20 @@ It is acceptable to commit small reproducible artifacts such as:
 
 ## Next Tasks
 
-1. Add model comparison experiments: SVM, KNN, Logistic Regression, XGBoost if available.
-2. Add repeated subject-level cross-validation, not random row split.
-3. Add a raw time-series baseline for the Windows high-compute machine, e.g. 1D-CNN or LSTM.
-4. Generate a clean experiment table for the paper.
-5. Ask Ma Kang about lab validation data collection and document protocol.
+1. Add a raw time-series baseline for the Windows high-compute machine, e.g. 1D-CNN or LSTM.
+2. Generate a clean experiment table for the paper from `results/model_comparison_summary.csv`.
+3. Ask Ma Kang about lab validation data collection and document protocol.
+
+## Windows Progress
+
+- Environment recreation succeeded with `.venv` and `requirements.txt`.
+- RF baseline was reproduced from `data/processed/gaitpdb_features.csv` with `--reuse-features`.
+- `src/run_model_comparison.py` now runs repeated subject-level CV model comparison.
+- Current 5x5 CV best balanced accuracy: SVM-RBF, 0.773 +/- 0.071.
+- Raw PhysioNet ZIP download and extraction succeeded through `http://127.0.0.1:7890`; detected 306 gait record files.
+- RF baseline was also reproduced from raw `.txt` files, extracting 279 normal-walk records after excluding dual-task walk 10.
+- `src/download_gaitpdb.py` now retries/resumes curl downloads more aggressively and supports `--proxy`.
+- `scripts/bootstrap_windows.ps1` now stops on native command failure.
 
 ## Important Method Rule
 

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
 import subprocess
 import sys
@@ -19,6 +20,23 @@ DATA_URL = (
 ZIP_NAME = "gait-in-parkinsons-disease-1.0.0.zip"
 
 
+def find_aria2c() -> str | None:
+    aria2c = shutil.which("aria2c")
+    if aria2c:
+        return aria2c
+
+    local_app_data = os.environ.get("LOCALAPPDATA")
+    if not local_app_data:
+        return None
+
+    winget_root = Path(local_app_data) / "Microsoft" / "WinGet" / "Packages"
+    if not winget_root.exists():
+        return None
+
+    matches = sorted(winget_root.rglob("aria2c.exe"))
+    return str(matches[-1]) if matches else None
+
+
 def run(args: list[str]) -> None:
     print("+ " + " ".join(args), flush=True)
     subprocess.run(args, check=True)
@@ -30,19 +48,24 @@ def download_with_python(url: str, output_path: Path) -> None:
         shutil.copyfileobj(response, out)
 
 
-def download(url: str, output_path: Path) -> None:
+def download(url: str, output_path: Path, proxy: str | None = None) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    if shutil.which("aria2c"):
-        run(
+    aria2c = find_aria2c()
+    if aria2c:
+        args = [
+            aria2c,
+            "--continue=true",
+            "--max-tries=20",
+            "--retry-wait=2",
+            "--max-connection-per-server=8",
+            "--split=8",
+            "--min-split-size=1M",
+        ]
+        if proxy:
+            args.append(f"--all-proxy={proxy}")
+        args.extend(
             [
-                "aria2c",
-                "--continue=true",
-                "--max-tries=20",
-                "--retry-wait=2",
-                "--max-connection-per-server=8",
-                "--split=8",
-                "--min-split-size=1M",
                 "--dir",
                 str(output_path.parent),
                 "--out",
@@ -50,24 +73,42 @@ def download(url: str, output_path: Path) -> None:
                 url,
             ]
         )
+        run(args)
         return
 
     if shutil.which("curl"):
-        run(
-            [
+        last_error: subprocess.CalledProcessError | None = None
+        for attempt in range(1, 21):
+            curl_args = [
                 "curl",
                 "-L",
                 "--fail",
                 "--show-error",
+                "--retry",
+                "10",
+                "--retry-delay",
+                "2",
+                "--retry-all-errors",
                 "--continue-at",
                 "-",
-                "--output",
-                str(output_path),
-                url,
             ]
-        )
-        return
+            if proxy:
+                curl_args.extend(["--proxy", proxy])
+            curl_args.extend(["--output", str(output_path), url])
+            try:
+                run(curl_args)
+                return
+            except subprocess.CalledProcessError as error:
+                last_error = error
+                print(
+                    f"curl attempt {attempt}/20 failed; will resume from partial file.",
+                    flush=True,
+                )
+        if last_error is not None:
+            raise last_error
 
+    if proxy:
+        raise RuntimeError("Proxy downloads require aria2c or curl.")
     download_with_python(url, output_path)
 
 
@@ -100,7 +141,7 @@ def write_dataset_note(data_root: Path, extract_dir: Path, record_count: int) ->
                 "Project page: https://physionet.org/content/gaitpdb/1.0.0/",
                 "License: Open Data Commons Attribution License v1.0",
                 "",
-                f"Extracted directory: {extract_dir}",
+                f"Extracted directory: {extract_dir.as_posix()}",
                 f"Detected gait record files: {record_count}",
                 "",
                 "Filename convention: Ga/Ju/Si = study, Co = control, Pt = PD patient.",
@@ -116,6 +157,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data-root", type=Path, default=Path("data/gaitpdb"))
     parser.add_argument("--url", default=DATA_URL)
+    parser.add_argument(
+        "--proxy",
+        default=os.environ.get("HTTPS_PROXY") or os.environ.get("HTTP_PROXY"),
+        help="Optional proxy URL, e.g. http://127.0.0.1:7890 or socks5://127.0.0.1:7890.",
+    )
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
 
@@ -128,7 +174,7 @@ def main() -> int:
     if not valid_zip(zip_path):
         if zip_path.exists():
             print(f"Found incomplete ZIP, resuming download: {zip_path}", flush=True)
-        download(args.url, zip_path)
+        download(args.url, zip_path, args.proxy)
     else:
         print(f"Valid ZIP already exists: {zip_path}", flush=True)
 
